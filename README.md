@@ -1,5 +1,13 @@
 # Solid - 3D Rigid Body Physics Engine
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/xavier268/solid.svg)](https://pkg.go.dev/github.com/xavier268/solid)
+[![Go Report Card](https://goreportcard.com/badge/github.com/xavier268/solid)](https://goreportcard.com/report/github.com/xavier268/solid)
+[![Build Status](https://github.com/xavier268/solid/workflows/CI/badge.svg)](https://github.com/xavier268/solid/actions)
+[![Coverage Status](https://coveralls.io/repos/github/xavier268/solid/badge.svg?branch=main)](https://coveralls.io/github/xavier268/solid?branch=main)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/release/xavier268/solid.svg)](https://github.com/xavier268/solid/releases)
+[![Go version](https://img.shields.io/badge/go-1.19+-blue.svg)](https://golang.org/dl/)
+
 A comprehensive Go package for simulating rigid body dynamics in 3D space with accurate physics calculations, quaternion-based rotations, and efficient force/torque integration.
 
 ## Overview
