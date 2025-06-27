@@ -132,7 +132,7 @@ func QuatIdentity() Quaternion {
 // Formula: q = (cos(θ/2), sin(θ/2) * axis_unit)
 // Returns identity quaternion if axis has near-zero length.
 func QuatFromAxisAngle(axis Vect, angle float64) Quaternion {
-	axisNorm := axis.Mod()
+	axisNorm := axis.Norm()
 	if axisNorm < 1e-10 {
 		return QuatIdentity()
 	}
@@ -155,7 +155,7 @@ func QuatFromAxisAngle(axis Vect, angle float64) Quaternion {
 // This is commonly used in robotics and control systems.
 // Formula: axis = rotVec/|rotVec|, angle = |rotVec|
 func QuatFromRotVec(rotVec Vect) Quaternion {
-	angle := rotVec.Mod()
+	angle := rotVec.Norm()
 	if angle < 1e-10 {
 		return QuatIdentity()
 	}

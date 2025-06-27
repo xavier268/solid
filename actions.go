@@ -52,7 +52,7 @@ func (s *Solid) ApplyMultipleActions(actions MultipleActions, dt float64) {
 			totalGlobalForce = totalGlobalForce.Add(globalForce)
 
 			// Compute torque if force is applied off-center
-			if forceApp.Point.ModSq() > 1e-20 { // Non-zero application point
+			if forceApp.Point.NormSq() > 1e-20 { // Non-zero application point
 				leverArm := s.Orientation.RotateVec(forceApp.Point)
 				globalTorque := leverArm.CrossProduct(globalForce)
 				localTorque := s.Orientation.Conj().RotateVec(globalTorque)
@@ -63,7 +63,7 @@ func (s *Solid) ApplyMultipleActions(actions MultipleActions, dt float64) {
 			totalGlobalForce = totalGlobalForce.Add(forceApp.Force)
 
 			// Compute torque if force is applied off-center
-			if forceApp.Point.ModSq() > 1e-20 { // Non-zero application point
+			if forceApp.Point.NormSq() > 1e-20 { // Non-zero application point
 				// NOTE: Point is always in local coordinates, transform to global
 				globalPoint := s.Orientation.RotateVec(forceApp.Point)
 				leverArm := globalPoint // Already relative to COM
@@ -88,14 +88,14 @@ func (s *Solid) ApplyMultipleActions(actions MultipleActions, dt float64) {
 
 	// 3. Apply net effects using existing optimized methods
 	// Translation from net force
-	if totalGlobalForce.ModSq() > 1e-20 && s.Mass > 1e-10 {
+	if totalGlobalForce.NormSq() > 1e-20 && s.Mass > 1e-10 {
 		acceleration := totalGlobalForce.Scale(1.0 / s.Mass)
 		s.Speed = s.Speed.Add(acceleration.Scale(dt))
 		s.Position = s.Position.Add(s.Speed.Scale(dt))
 	}
 
 	// Rotation from net torque (includes gyroscopic effects)
-	if totalLocalTorque.ModSq() > 1e-20 {
+	if totalLocalTorque.NormSq() > 1e-20 {
 		s.ApplyLocalTorque(totalLocalTorque, dt)
 	}
 }

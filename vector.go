@@ -71,15 +71,15 @@ func (v Vect) CrossProduct(w Vect) Vect {
 	}
 }
 
-// Mod computes the magnitude (length) of the vector: |v| = √(x² + y² + z²).
+// Norm computes the magnitude (length) of the vector: |v| = √(x² + y² + z²).
 // Returns the Euclidean norm of the vector.
-func (v Vect) Mod() float64 {
+func (v Vect) Norm() float64 {
 	return math.Sqrt(v.Dot(v))
 }
 
-// ModSq computes the squared magnitude of the vector: |v|² = x² + y² + z².
+// NormSq computes the squared magnitude of the vector: |v|² = x² + y² + z².
 // More efficient than Mod() when only comparing magnitudes or for energy calculations.
-func (v Vect) ModSq() float64 {
+func (v Vect) NormSq() float64 {
 	return v.Dot(v)
 }
 
@@ -102,8 +102,8 @@ func (v Vect) String() string {
 // WARNING: Will panic if either vector has zero magnitude.
 func AngleRad(u, v Vect) float64 {
 	// Add safety check for zero-length vectors
-	uMod := u.Mod()
-	vMod := v.Mod()
+	uMod := u.Norm()
+	vMod := v.Norm()
 	if uMod < 1e-15 || vMod < 1e-15 {
 		return 0.0 // Convention: angle with zero vector is 0
 	}

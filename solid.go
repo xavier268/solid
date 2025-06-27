@@ -192,8 +192,8 @@ func (s Solid) String() string {
 
 	sb := new(strings.Builder)
 	fmt.Fprintf(sb, "Solid        :    Mass  %3e kg\t inertia : %s\n", s.Mass, s.Inertia.String())
-	fmt.Fprintf(sb, "Position (m) :    Global %s\t Distance %.1e\n", s.Position.String(), s.Position.Mod())
-	fmt.Fprintf(sb, "Speed (m/s)  :    Global %s\t Local %s\t Speed %.1e m/s\n", s.Speed.String(), s.ToLocal(s.Speed).String(), s.Speed.Mod())
+	fmt.Fprintf(sb, "Position (m) :    Global %s\t Distance %.1e\n", s.Position.String(), s.Position.Norm())
+	fmt.Fprintf(sb, "Speed (m/s)  :    Global %s\t Local %s\t Speed %.1e m/s\n", s.Speed.String(), s.ToLocal(s.Speed).String(), s.Speed.Norm())
 
 	// Local coordinate system basis vectors
 	i, j, k := Vect{1, 0, 0}, Vect{0, 1, 0}, Vect{0, 0, 1} // Local basis in local coordinates
@@ -201,7 +201,7 @@ func (s Solid) String() string {
 	fmt.Fprintf(sb, "Orientation  :    I : %.1f°, J : %.1f°, K : %.1f°\n", AngleDeg(I, i), AngleDeg(J, j), AngleDeg(K, k))
 	localSpeed := s.ToLocal(s.Speed)
 	fmt.Fprintf(sb, "Velocity Dir :    I : %.1f°, J : %.1f°, K : %.1f°\n", AngleDeg(I, localSpeed), AngleDeg(J, localSpeed), AngleDeg(K, localSpeed))
-	fmt.Fprintf(sb, "Ang. speed   :    Local %s\t Speed (%.1e Rad/s, %.1e °/s)\n", s.Omega.String(), s.Omega.Mod(), s.Omega.Mod()*180/math.Pi)
+	fmt.Fprintf(sb, "Ang. speed   :    Local %s\t Speed (%.1e Rad/s, %.1e °/s)\n", s.Omega.String(), s.Omega.Norm(), s.Omega.Norm()*180/math.Pi)
 	return sb.String()
 }
 
@@ -212,7 +212,7 @@ func (s Solid) String() string {
 // Parameters:
 //
 //	mass: Mass of the cylinder [kg], must be > 0
-//	radius: Radius of the cylinder [m], must be > 0  
+//	radius: Radius of the cylinder [m], must be > 0
 //	height: Height of the cylinder [m], can be 0 for a disk
 //
 // Returns:
@@ -262,7 +262,7 @@ func NewSphere(mass, radius float64) *Solid {
 //
 //	mass: Mass of the box [kg], must be > 0
 //	a: Width along X-axis [m], must be >= 0
-//	b: Height along Y-axis [m], must be >= 0  
+//	b: Height along Y-axis [m], must be >= 0
 //	c: Depth along Z-axis [m], must be >= 0
 //
 // Returns:

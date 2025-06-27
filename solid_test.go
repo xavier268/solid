@@ -202,7 +202,7 @@ func TestGyroscopicTerm(t *testing.T) {
 	// Mais avec asymétrie, il devrait y avoir un effet
 
 	// Ce test vérifie que le code ne crash pas et que les calculs sont cohérents
-	if s.Omega.Mod() > 10 { // Vérification de stabilité numérique
+	if s.Omega.Norm() > 10 { // Vérification de stabilité numérique
 		t.Errorf("Instabilité numérique détectée dans le terme gyroscopique")
 	}
 	fmt.Println(s)
@@ -218,7 +218,7 @@ func TestEnergyConservation(t *testing.T) {
 	s.Omega = Vect{0, 0, 1}
 
 	// Calculer l'énergie initiale
-	kineticLinear := 0.5 * s.Mass * s.Speed.ModSq()
+	kineticLinear := 0.5 * s.Mass * s.Speed.NormSq()
 	kineticRotational := 0.5 * (s.Inertia[0]*s.Omega[0]*s.Omega[0] +
 		s.Inertia[1]*s.Omega[1]*s.Omega[1] +
 		s.Inertia[2]*s.Omega[2]*s.Omega[2])
@@ -232,7 +232,7 @@ func TestEnergyConservation(t *testing.T) {
 	}
 
 	// Calculer l'énergie finale
-	finalKineticLinear := 0.5 * s.Mass * s.Speed.ModSq()
+	finalKineticLinear := 0.5 * s.Mass * s.Speed.NormSq()
 	finalKineticRotational := 0.5 * (s.Inertia[0]*s.Omega[0]*s.Omega[0] +
 		s.Inertia[1]*s.Omega[1]*s.Omega[1] +
 		s.Inertia[2]*s.Omega[2]*s.Omega[2])
@@ -315,17 +315,17 @@ func TestComplexSimulation(t *testing.T) {
 		s.ApplyLocalTorque(torque, dt)
 
 		// Vérifications de stabilité
-		if s.Position.Mod() > 100 {
+		if s.Position.Norm() > 100 {
 			t.Errorf("Position explosive détectée: %v", s.Position)
 			break
 		}
 
-		if s.Speed.Mod() > 100 {
+		if s.Speed.Norm() > 100 {
 			t.Errorf("Vitesse explosive détectée: %v", s.Speed)
 			break
 		}
 
-		if s.Omega.Mod() > 100 {
+		if s.Omega.Norm() > 100 {
 			t.Errorf("Vitesse angulaire explosive détectée: %v", s.Omega)
 			break
 		}
