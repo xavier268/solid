@@ -197,8 +197,9 @@ func NewCylinder(mass, radius, height float64) *Solid {
 	iz := 0.5 * mass * radius * radius
 	ix := iz/2. + 1./12.*mass*height*height
 	return &Solid{
-		Mass:    mass,
-		Inertia: Vect{ix, ix, iz},
+		Mass:        mass,
+		Inertia:     Vect{ix, ix, iz},
+		Orientation: Quaternion{1, 0, 0, 0},
 	}
 }
 
@@ -207,8 +208,9 @@ func NewCylinder(mass, radius, height float64) *Solid {
 func NewSphere(mass, radius float64) *Solid {
 	i := 0.4 * mass * radius * radius
 	return &Solid{
-		Mass:    mass,
-		Inertia: Vect{i, i, i},
+		Mass:        mass,
+		Inertia:     Vect{i, i, i},
+		Orientation: Quaternion{1, 0, 0, 0},
 	}
 }
 
@@ -219,7 +221,8 @@ func NewBox(mass, a, b, c float64) *Solid {
 	iz := 1. / 12. * mass * (a*a + c*c)
 	iy := 1. / 12. * mass * (a*a + b*b)
 	return &Solid{
-		Mass:    mass,
-		Inertia: Vect{ix, iy, iz},
+		Mass:        mass,
+		Inertia:     Vect{ix, iy, iz},
+		Orientation: Quaternion{1, 0, 0, 0},
 	}
 }
