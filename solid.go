@@ -22,13 +22,16 @@ type Solid struct {
 
 // ApplyLocalTorque applies a torque in the local body frame and integrates the rotational motion.
 // This implements Euler's rotation equations for rigid body dynamics:
-//   α = I⁻¹ · (τ - ω × (I·ω))
+//
+//	α = I⁻¹ · (τ - ω × (I·ω))
+//
 // where α is angular acceleration, I is inertia tensor, τ is applied torque,
 // ω is angular velocity, and ω × (I·ω) is the gyroscopic term.
 //
 // Parameters:
-//   localTorque: Applied torque in local body coordinates [N·m]
-//   dt: Time step for integration [s]
+//
+//	localTorque: Applied torque in local body coordinates [N·m]
+//	dt: Time step for integration [s]
 func (s *Solid) ApplyLocalTorque(localTorque Vect, dt float64) {
 	// Safety check: avoid division by zero for massless rotations
 	if s.Inertia[0] < 1e-10 || s.Inertia[1] < 1e-10 || s.Inertia[2] < 1e-10 {
@@ -37,7 +40,7 @@ func (s *Solid) ApplyLocalTorque(localTorque Vect, dt float64) {
 
 	// 1. Compute angular acceleration using Euler's rotation equations
 	//    α = I⁻¹ · (τ - ω × (I·ω))
-	
+
 	// First, compute I·ω (angular momentum in body frame)
 	Jomega := Vect{
 		s.Inertia[0] * s.Omega[0],
@@ -48,7 +51,7 @@ func (s *Solid) ApplyLocalTorque(localTorque Vect, dt float64) {
 	// Compute gyroscopic term: ω × (I·ω)
 	// This represents the coupling between rotation axes due to inertia asymmetry
 	gyroscopic := s.Omega.CrossProduct(Jomega)
-	
+
 	// Net torque = applied torque - gyroscopic torque
 	netTorque := localTorque.Sub(gyroscopic)
 
@@ -72,8 +75,9 @@ func (s *Solid) ApplyLocalTorque(localTorque Vect, dt float64) {
 // The force is first transformed to global coordinates, then Newton's laws are applied.
 //
 // Parameters:
-//   localForce: Force vector in local body coordinates [N]
-//   dt: Time step for integration [s]
+//
+//	localForce: Force vector in local body coordinates [N]
+//	dt: Time step for integration [s]
 func (s *Solid) ApplyLocalForce(localForce Vect, dt float64) {
 	// Safety check for massless objects
 	if s.Mass < 1e-10 {
@@ -101,9 +105,10 @@ func (s *Solid) ApplyLocalForce(localForce Vect, dt float64) {
 // The force creates a torque about the center of mass: τ = r × F
 //
 // Parameters:
-//   localForce: Force vector in local body coordinates [N]
-//   localPoint: Point of application relative to COM in local coordinates [m]
-//   dt: Time step for integration [s]
+//
+//	localForce: Force vector in local body coordinates [N]
+//	localPoint: Point of application relative to COM in local coordinates [m]
+//	dt: Time step for integration [s]
 func (s *Solid) ApplyLocalForceAtPoint(localForce Vect, localPoint Vect, dt float64) {
 	// 1. Transform force and point to global coordinates
 	globalForce := s.Orientation.RotateVec(localForce)

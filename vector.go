@@ -107,7 +107,7 @@ func AngleRad(u, v Vect) float64 {
 	if uMod < 1e-15 || vMod < 1e-15 {
 		return 0.0 // Convention: angle with zero vector is 0
 	}
-	
+
 	// Clamp dot product to [-1, 1] to handle numerical errors
 	cosTheta := u.Dot(v) / (uMod * vMod)
 	if cosTheta > 1.0 {
@@ -115,7 +115,7 @@ func AngleRad(u, v Vect) float64 {
 	} else if cosTheta < -1.0 {
 		cosTheta = -1.0
 	}
-	
+
 	return math.Acos(cosTheta)
 }
 

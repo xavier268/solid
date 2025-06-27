@@ -3,9 +3,9 @@ package solid
 // ForceAction represents a force with its point of application.
 // This structure allows for precise control over where forces are applied on the rigid body.
 type ForceAction struct {
-	Force   Vect // Force vector in local or global coordinates [N]
-	Point   Vect // Point of application relative to COM (Vect{0,0,0} = center of mass) [m]
-	             // Always in local coordinates regardless of IsLocal flag
+	Force Vect // Force vector in local or global coordinates [N]
+	Point Vect // Point of application relative to COM (Vect{0,0,0} = center of mass) [m]
+	// Always in local coordinates regardless of IsLocal flag
 	IsLocal bool // true = force in local coordinates, false = global coordinates
 }
 
@@ -36,12 +36,13 @@ type MultipleActions struct {
 // This approach avoids coupling errors that would arise from sequential application.
 //
 // Parameters:
-//   actions: Collection of forces and torques to apply
-//   dt: Time step for integration [s]
+//
+//	actions: Collection of forces and torques to apply
+//	dt: Time step for integration [s]
 func (s *Solid) ApplyMultipleActions(actions MultipleActions, dt float64) {
 	// Accumulators for net effects
-	totalGlobalForce := Vect{0, 0, 0}  // Net force in global coordinates
-	totalLocalTorque := Vect{0, 0, 0}  // Net torque in local coordinates
+	totalGlobalForce := Vect{0, 0, 0} // Net force in global coordinates
+	totalLocalTorque := Vect{0, 0, 0} // Net torque in local coordinates
 
 	// 1. Process all forces and their induced torques
 	for _, forceApp := range actions.Forces {
