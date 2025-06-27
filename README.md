@@ -26,7 +26,7 @@ The `solid` package provides a complete physics simulation framework for rigid b
 ## Installation
 
 ```bash
-go get github.com/yourusername/solid
+go get github.com/xavier268/solid
 ```
 
 ## Quick Start
