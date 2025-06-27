@@ -141,58 +141,88 @@ func (s Solid) ToGlobal(localVect Vect) Vect {
 	return s.Orientation.RotateVec(localVect)
 }
 
-// Application d'une force globale (plus simple)
+// ApplyGlobalForce applies a force in global coordinates at the center of mass.
+// This affects only translational motion (no rotation since force passes through COM).
+// Uses Newton's second law F = ma for acceleration calculation.
+//
+// Parameters:
+//
+//	globalForce: Force vector in global coordinates [N]
+//	dt: Time step for integration [s]
 func (s *Solid) ApplyGlobalForce(globalForce Vect, dt float64) {
 
 	if s.Mass < 1e-10 {
-		return // éviter division par zéro
+		return // Avoid division by zero for massless objects
 	}
 
-	// Calculer l'accélération : a = F/m
+	// Calculate acceleration: a = F/m
 	acceleration := globalForce.Scale(1.0 / s.Mass)
 
-	// Intégrer la vitesse et position
+	// Integrate velocity and position using semi-implicit Euler
 	s.Speed = s.Speed.Add(acceleration.Scale(dt))
 	s.Position = s.Position.Add(s.Speed.Scale(dt))
 }
 
-// Application d'une force globale à un point global
+// ApplyGlobalForceAtPoint applies a force in global coordinates at a specific global point.
+// This generates both translational and rotational motion due to the lever arm effect.
+// The force creates a torque about the center of mass: τ = r × F
+//
+// Parameters:
+//
+//	globalForce: Force vector in global coordinates [N]
+//	globalPoint: Point of application in global coordinates [m]
+//	dt: Time step for integration [s]
 func (s *Solid) ApplyGlobalForceAtPoint(globalForce Vect, globalPoint Vect, dt float64) {
-	// 1. Translation
+	// 1. Apply translational effect
 	s.ApplyGlobalForce(globalForce, dt)
 
-	// 2. Rotation : couple = r × F
+	// 2. Calculate torque: τ = r × F
 	leverArm := globalPoint.Sub(s.Position)
 	globalTorque := leverArm.CrossProduct(globalForce)
 
-	// 3. Appliquer le couple (converti en local)
+	// 3. Apply torque (converted to local frame)
 	localTorque := s.Orientation.Conj().RotateVec(globalTorque)
 	s.ApplyLocalTorque(localTorque, dt)
 }
 
-// Affiche les informations sur le solide
+// String returns a detailed string representation of the solid's physical state.
+// Includes mass, inertia, position, velocity, orientation, and angular velocity information.
+// Useful for debugging and monitoring simulation state.
 func (s Solid) String() string {
 
 	sb := new(strings.Builder)
 	fmt.Fprintf(sb, "Solid        :    Mass  %3e kg\t inertia : %s\n", s.Mass, s.Inertia.String())
-	//fmt.Fprintln(sb)
 	fmt.Fprintf(sb, "Position (m) :    Global %s\t Distance %.1e\n", s.Position.String(), s.Position.Mod())
 	fmt.Fprintf(sb, "Speed (m/s)  :    Global %s\t Local %s\t Speed %.1e m/s\n", s.Speed.String(), s.ToLocal(s.Speed).String(), s.Speed.Mod())
-	//fmt.Fprintln(sb)
 
-	i, j, k := Vect{1, 0, 0}, Vect{0, 1, 0}, Vect{0, 0, 1} // local base in local coord
-	I, J, K := s.ToGlobal(i), s.ToGlobal(j), s.ToGlobal(k) // local base in global coord
+	// Local coordinate system basis vectors
+	i, j, k := Vect{1, 0, 0}, Vect{0, 1, 0}, Vect{0, 0, 1} // Local basis in local coordinates
+	I, J, K := s.ToGlobal(i), s.ToGlobal(j), s.ToGlobal(k) // Local basis in global coordinates
 	fmt.Fprintf(sb, "Orientation  :    I : %.1f°, J : %.1f°, K : %.1f°\n", AngleDeg(I, i), AngleDeg(J, j), AngleDeg(K, k))
-	lspeed := s.ToLocal(s.Speed)
-	fmt.Fprintf(sb, "Derive       :    I : %.1f°, J : %.1f°, K : %.1f°\n", AngleDeg(I, lspeed), AngleDeg(J, lspeed), AngleDeg(K, lspeed))
+	localSpeed := s.ToLocal(s.Speed)
+	fmt.Fprintf(sb, "Velocity Dir :    I : %.1f°, J : %.1f°, K : %.1f°\n", AngleDeg(I, localSpeed), AngleDeg(J, localSpeed), AngleDeg(K, localSpeed))
 	fmt.Fprintf(sb, "Ang. speed   :    Local %s\t Speed (%.1e Rad/s, %.1e °/s)\n", s.Omega.String(), s.Omega.Mod(), s.Omega.Mod()*180/math.Pi)
 	return sb.String()
 }
 
-// Create a cylinder with the given parameters.
-// Main cylinder axis is 0z
-// radius must be > 0
-// It is ok for height to be 0 (disk)
+// NewCylinder creates a new cylindrical solid with the specified mass, radius, and height.
+// The cylinder's main axis is aligned with the Z-axis in the local coordinate system.
+// Uses the correct inertia tensor for a solid cylinder.
+//
+// Parameters:
+//
+//	mass: Mass of the cylinder [kg], must be > 0
+//	radius: Radius of the cylinder [m], must be > 0  
+//	height: Height of the cylinder [m], can be 0 for a disk
+//
+// Returns:
+//
+//	*Solid: Pointer to the created cylinder with proper inertia tensor
+//
+// Inertia tensor components:
+//
+//	Iz = (1/2) * m * r²           (around cylinder axis)
+//	Ix = Iy = Iz/2 + (1/12) * m * h²  (perpendicular axes)
 func NewCylinder(mass, radius, height float64) *Solid {
 	iz := 0.5 * mass * radius * radius
 	ix := iz/2. + 1./12.*mass*height*height
@@ -203,8 +233,19 @@ func NewCylinder(mass, radius, height float64) *Solid {
 	}
 }
 
-// Create a sphere.
-// radius must be > 0
+// NewSphere creates a new spherical solid with the specified mass and radius.
+// Uses the correct inertia tensor for a solid sphere.
+//
+// Parameters:
+//
+//	mass: Mass of the sphere [kg], must be > 0
+//	radius: Radius of the sphere [m], must be > 0
+//
+// Returns:
+//
+//	*Solid: Pointer to the created sphere with isotropic inertia tensor
+//
+// Inertia tensor: I = (2/5) * m * r² for all three principal axes
 func NewSphere(mass, radius float64) *Solid {
 	i := 0.4 * mass * radius * radius
 	return &Solid{
@@ -214,8 +255,26 @@ func NewSphere(mass, radius float64) *Solid {
 	}
 }
 
-// Create a box (cubold).
-// it is ok if ONE dimension is 0 (thin plate)
+// NewBox creates a new rectangular box (cuboid) solid with the specified dimensions.
+// Uses the correct inertia tensor for a rectangular solid.
+//
+// Parameters:
+//
+//	mass: Mass of the box [kg], must be > 0
+//	a: Width along X-axis [m], must be >= 0
+//	b: Height along Y-axis [m], must be >= 0  
+//	c: Depth along Z-axis [m], must be >= 0
+//
+// Returns:
+//
+//	*Solid: Pointer to the created box with proper inertia tensor
+//
+// Note: One dimension can be 0 to create a thin plate.
+// Inertia tensor components:
+//
+//	Ix = (1/12) * m * (b² + c²)
+//	Iy = (1/12) * m * (a² + c²)
+//	Iz = (1/12) * m * (a² + b²)
 func NewBox(mass, a, b, c float64) *Solid {
 	ix := 1. / 12. * mass * (b*b + c*c)
 	iz := 1. / 12. * mass * (a*a + c*c)

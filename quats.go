@@ -186,23 +186,30 @@ func (q Quaternion) RotateVec(v Vect) Vect {
 
 // === CONVERSION ===
 
-// Extraction de l'axe et de l'angle
+// ToAxisAngle extracts the rotation axis and angle from the quaternion.
+// Returns the axis as a unit vector and the rotation angle in radians.
+// For zero rotation, returns an arbitrary axis (1,0,0) and angle 0.
+//
+// Returns:
+//
+//	axis: Unit vector representing the rotation axis
+//	angle: Rotation angle in radians [0, π]
 func (q Quaternion) ToAxisAngle() (axis Vect, angle float64) {
-	// Normaliser d'abord
+	// Normalize first
 	qn := q.Normalize()
 
-	// Assurer w ≥ 0 pour éviter l'ambiguïté de signe
+	// Ensure w ≥ 0 to avoid sign ambiguity (q and -q represent same rotation)
 	if qn[0] < 0 {
 		qn = qn.Scale(-1)
 	}
 
-	// w = cos(θ/2), donc θ = 2*arccos(w)
+	// w = cos(θ/2), so θ = 2*arccos(w)
 	angle = 2.0 * math.Acos(math.Min(1.0, math.Abs(qn[0])))
 
-	// axe = partie_imaginaire / sin(θ/2)
+	// axis = imaginary_part / sin(θ/2)
 	sinHalf := math.Sin(angle * 0.5)
 	if sinHalf < 1e-10 {
-		// Pas de rotation, axe arbitraire
+		// No rotation, return arbitrary axis
 		return Vect{1, 0, 0}, 0
 	}
 
@@ -210,13 +217,19 @@ func (q Quaternion) ToAxisAngle() (axis Vect, angle float64) {
 	return axis, angle
 }
 
-// Conversion vers matrice de rotation
+// ToMatrix converts the quaternion to a 3x3 rotation matrix.
+// The resulting matrix can be used to rotate vectors: v' = M * v
+// Uses the standard quaternion-to-matrix conversion formula.
+//
+// Returns:
+//
+//	Mat: 3x3 rotation matrix equivalent to the quaternion rotation
 func (q Quaternion) ToMatrix() Mat {
-	// Normaliser d'abord
+	// Normalize first to ensure unit quaternion
 	qn := q.Normalize()
 	w, x, y, z := qn[0], qn[1], qn[2], qn[3]
 
-	// Matrice de rotation à partir du quaternion unitaire
+	// Rotation matrix from unit quaternion using standard formula
 	return Mat{
 		{1 - 2*(y*y+z*z), 2 * (x*y - w*z), 2 * (x*z + w*y)},
 		{2 * (x*y + w*z), 1 - 2*(x*x+z*z), 2 * (y*z - w*x)},
@@ -224,37 +237,56 @@ func (q Quaternion) ToMatrix() Mat {
 	}
 }
 
-// === INTÉGRATION TEMPORELLE ===
+// === TEMPORAL INTEGRATION ===
 
-// Intégration de la vitesse angulaire
-// dq/dt = 0.5 * q * (0, ω)
+// Integrate updates the quaternion by integrating angular velocity over time.
+// Implements the quaternion differential equation: dq/dt = 0.5 * q * (0, ω)
+// Uses exact integration via rotation vector for better accuracy.
+//
+// Parameters:
+//
+//	omega: Angular velocity vector in the same frame as quaternion [rad/s]
+//	dt: Time step for integration [s]
+//
+// Returns:
+//
+//	Quaternion: Updated quaternion after integration, automatically normalized
 func (q Quaternion) Integrate(omega Vect, dt float64) Quaternion {
-	// Quaternion de rotation incrémentale
+	// Incremental rotation quaternion from angular velocity
 	deltaQ := QuatFromRotVec(omega.Scale(dt))
 
-	// Composition : q_new = delta_q * q_old
+	// Composition: q_new = delta_q * q_old (rotation composition)
 	return deltaQ.Mul(q).Normalize()
 }
 
 // === INTERPOLATION ===
 
-// SLERP (Spherical Linear Interpolation) entre deux quaternions
-// t ∈ [0, 1] : t=0 donne q, t=1 donne r
+// Slerp performs Spherical Linear Interpolation between two quaternions.
+// Provides smooth interpolation along the shortest path on the quaternion sphere.
+//
+// Parameters:
+//
+//	r: Target quaternion to interpolate towards
+//	t: Interpolation parameter ∈ [0, 1], where t=0 returns q, t=1 returns r
+//
+// Returns:
+//
+//	Quaternion: Interpolated quaternion between q and r
 func (q Quaternion) Slerp(r Quaternion, t float64) Quaternion {
-	// Normaliser
+	// Normalize input quaternions
 	q1 := q.Normalize()
 	q2 := r.Normalize()
 
-	// Calculer le produit scalaire
+	// Calculate dot product
 	dot := q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2] + q1[3]*q2[3]
 
-	// Choisir le chemin le plus court
+	// Choose shortest path (q and -q represent same rotation)
 	if dot < 0 {
 		q2 = q2.Scale(-1)
 		dot = -dot
 	}
 
-	// Si les quaternions sont très proches, interpolation linéaire
+	// If quaternions are very close, use linear interpolation
 	if dot > 0.9995 {
 		result := q1.Scale(1 - t).Add(q2.Scale(t))
 		return result.Normalize()
@@ -270,36 +302,45 @@ func (q Quaternion) Slerp(r Quaternion, t float64) Quaternion {
 	return q1.Scale(factor1).Add(q2.Scale(factor2))
 }
 
-// Conversion correcte d'une matrice de rotation vers un quaternion
-// Utilise l'algorithme de Shepperd pour la stabilité numérique
+// QuatFromMatrix converts a rotation matrix to a quaternion.
+// Uses Shepperd's algorithm for numerical stability, which avoids
+// near-zero denominators by choosing the largest diagonal element.
+//
+// Parameters:
+//
+//	m: 3x3 rotation matrix (should be orthogonal with determinant 1)
+//
+// Returns:
+//
+//	Quaternion: Unit quaternion representing the same rotation as the matrix
 func QuatFromMatrix(m Mat) Quaternion {
 	trace := m[0][0] + m[1][1] + m[2][2]
 
 	var q Quaternion
 
 	if trace > 0 {
-		// Cas standard : trace positive
+		// Standard case: positive trace
 		s := math.Sqrt(trace+1.0) * 2  // s = 4 * qw
 		q[0] = 0.25 * s                // w
 		q[1] = (m[2][1] - m[1][2]) / s // x
 		q[2] = (m[0][2] - m[2][0]) / s // y
 		q[3] = (m[1][0] - m[0][1]) / s // z
 	} else if m[0][0] > m[1][1] && m[0][0] > m[2][2] {
-		// m[0][0] est le plus grand élément diagonal
+		// m[0][0] is the largest diagonal element
 		s := math.Sqrt(1.0+m[0][0]-m[1][1]-m[2][2]) * 2 // s = 4 * qx
 		q[0] = (m[2][1] - m[1][2]) / s                  // w
 		q[1] = 0.25 * s                                 // x
 		q[2] = (m[0][1] + m[1][0]) / s                  // y
 		q[3] = (m[0][2] + m[2][0]) / s                  // z
 	} else if m[1][1] > m[2][2] {
-		// m[1][1] est le plus grand élément diagonal
+		// m[1][1] is the largest diagonal element
 		s := math.Sqrt(1.0+m[1][1]-m[0][0]-m[2][2]) * 2 // s = 4 * qy
 		q[0] = (m[0][2] - m[2][0]) / s                  // w
 		q[1] = (m[0][1] + m[1][0]) / s                  // x
 		q[2] = 0.25 * s                                 // y
 		q[3] = (m[1][2] + m[2][1]) / s                  // z
 	} else {
-		// m[2][2] est le plus grand élément diagonal
+		// m[2][2] is the largest diagonal element
 		s := math.Sqrt(1.0+m[2][2]-m[0][0]-m[1][1]) * 2 // s = 4 * qz
 		q[0] = (m[1][0] - m[0][1]) / s                  // w
 		q[1] = (m[0][2] + m[2][0]) / s                  // x
