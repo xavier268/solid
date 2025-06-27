@@ -1,3 +1,4 @@
 package solid
 
-const VERSION = "0.1.0"
+// v0.1.1		fixed typos
+const VERSION = "0.1.1"
