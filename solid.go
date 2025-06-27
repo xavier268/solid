@@ -150,7 +150,6 @@ func (s Solid) ToGlobal(localVect Vect) Vect {
 //	globalForce: Force vector in global coordinates [N]
 //	dt: Time step for integration [s]
 func (s *Solid) ApplyGlobalForce(globalForce Vect, dt float64) {
-
 	if s.Mass < 1e-10 {
 		return // Avoid division by zero for massless objects
 	}
@@ -189,7 +188,6 @@ func (s *Solid) ApplyGlobalForceAtPoint(globalForce Vect, globalPoint Vect, dt f
 // Includes mass, inertia, position, velocity, orientation, and angular velocity information.
 // Useful for debugging and monitoring simulation state.
 func (s Solid) String() string {
-
 	sb := new(strings.Builder)
 	fmt.Fprintf(sb, "Solid        :    Mass  %3e kg\t inertia : %s\n", s.Mass, s.Inertia.String())
 	fmt.Fprintf(sb, "Position (m) :    Global %s\t Distance %.1e\n", s.Position.String(), s.Position.Norm())
